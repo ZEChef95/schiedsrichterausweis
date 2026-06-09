@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Fußball Mobile">
+  <meta name="theme-color" content="#8A0917">
+  <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <title>Schiedsrichterausweis</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --vfv-red: #8A0917;
+      --bg: #ffffff;
+      --card-bg: #ffffff;
+      --text-dark: #1c1c1e;
+      --text-gray: #6c6c70;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Titillium Web', -apple-system, 'SF Pro Display', 'Arial', sans-serif;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    /* ---- TOP BAR ---- */
+    .topbar {
+      background: var(--vfv-red);
+      color: white;
+      text-align: center;
+      padding:
+        calc(env(safe-area-inset-top) + 14px)
+        16px
+        12px;
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: 0.1px;
+      position: relative;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .topbar .back-arrow {
+      position: absolute;
+      left: 16px;
+      bottom: 0px;
+      font-size: 30px;
+      color: white;
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    /* ---- OUTER WRAPPER ---- */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    /* ---- SLIDER ---- */
+    .slider-wrapper {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .slider-track {
+      display: flex;
+      width: 200%;
+      height: 100%;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    .slide {
+      width: 50%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 20px 16px 24px;
+    }
+
+    /* ---- CARD ---- */
+    .card {
+      background: var(--card-bg);
+      border-radius: 18px;
+      overflow: hidden;
+      border: 2px solid #B3B3B3;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+      transform: translateZ(0);
+      will-change: transform;
+    }
+
+    .card::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 20px;
+        z-index: 2;
+    
+        background: linear-gradient(
+            to bottom,
+            rgba(255,255,255,0),
+            rgba(255,255,255,1)
+        );
+    
+        pointer-events: none;
+        will-change: opacity;
+        transform: translateZ(0);
+    }
+
+    /* Card header banner */
+    .card-header {
+      background: var(--vfv-red);
+      height: 60px;
+      border-radius: 15px 15px 0px 0px;
+      overflow: hidden;
+      clip-path: path("M0,0 H100% V70% Q50% 100% 0 70% Z");
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-header-text {
+      text-align: right;
+      color: white;
+    }
+
+    .card-header-text .title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+      margin: 10px;
+    }
+
+    .card-header-text .subtitle {
+      font-size: 12px;
+      font-weight: 400;
+      opacity: 0.9;
+      margin: 10px;
+      margin-top: -10px;
+    }
+
+    .card-scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      background: white;
+      position: relative;
+      z-index: 1;
+        /* Scrollleiste verstecken */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+
+      /* Kein Overscroll/Bounce */
+      overscroll-behavior-y: contain;
+      overscroll-behavior: none;
+      touch-action: pan-y;
+    }
+
+    .card-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .bogen-overlay {
+      position: absolute;
+      top: 60px;
+      left: 0;
+      width: 100%;
+      z-index: 5;
+      pointer-events: none;
+
+      /* FIX: verhindert Re-Decode / Flicker */
+      background-image: url("Images/Bogen.png");
+      background-repeat: no-repeat;
+      background-position: top center;
+      background-size: 100% auto;
+
+      transform: translateZ(0);
+      will-change: transform;
+    }
+
+    .bogen-overlay img {
+      width: 100%;
+      display: block;
+    }
+
+    /* Photo + logo row */
+    .photo-row {
+      display: flex;
+      align-items: flex-end;
+      padding: 0 16px 0 0;
+      gap: 0;
+    }
+
+    .photo-container {
+      width: 55%;
+    }
+
+    .photo-container img {
+      width: 100%;
+      max-width: 240px;
+      margin: 0 auto;
+      display: block;
+      border-radius: 0px 0px 15px 0px;
+    }
+
+    .logo-container {
+      margin-left: 20px;
+      justify-content: center;
+      align-items: center;
+      padding-bottom: 12px;
+      background: white;
+      padding-top: 8px;
+    }
+
+    .vfv-logo {
+      height: 52px;
+    }
+
+    /* Info section */
+    .card-info {
+      padding: 14px 10px 0px;
+      background: white;
+    }
+
+    .card-info .role {
+      font-size: 10px;
+      color: var(--text-gray);
+      margin-bottom: 4px;
+      font-weight: 400;
+    }
+
+    .card-info .name {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-dark);
+      line-height: 1.1;
+      margin-bottom: 10px;
+    }
+
+    .card-info .nr {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 3px;
+    }
+
+    .card-info .valid {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-bottom: 18px;
+    }
+
+    /* QR code */
+    .qr-section {
+      padding: 0 16px 20px;
+      background: white;
+    }
+
+    .qr-code {
+      width: 100%;
+      max-width: 280px;
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* ---- LEGITIMATION CARD ---- */
+    .legit-card {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg);
+      border-radius: 18px;
+      overflow: hidden;
+      padding: 20px 18px 24px;
+      border: 2px solid #B3B3B3;
+    }
+
+    .legit-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .legit-logo {
+      height: 42px;
+    }
+
+    .legit-title-block {
+      text-align: right;
+    }
+
+    .legit-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+
+    .legit-name {
+      font-size: 13px;
+      color: var(--text-gray);
+      margin-top: 2px;
+    }
+
+    .legit-body {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--text-dark);
+    }
+
+    .signature-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .signature-img {
+      height: 80px;
+    }
+
+    .sig-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-dark);
+      text-align: center;
+    }
+
+    .sig-role {
+      font-size: 13px;
+      color: var(--text-gray);
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .valid-until {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin-top: auto;
+    }
+
+    /* ---- DOTS ---- */
+    .dots {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 0 20px;
+      flex-shrink: 0;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      background: #999999;
+      cursor: pointer;
+    }
+
+    .dot.active {
+      background: var(--vfv-red);
+      width: 32px;
+    }
+
+    /* ---- BOTTOM NAV ---- */
+    .bottom-nav {
+      background: white;
+      border-top: 1px solid #E6E6E6;
+      display: flex;
+      justify-content: space-around;
+      flex-shrink: 0;
+    }
+
+    .nav-item {
+      width: 400px;
+    }
+
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <span class="back-arrow">‹</span>
+    Schiedsrichterausweis
+  </div>
+
+  <!-- SLIDER -->
+  <div class="slider-wrapper" id="sliderWrapper">
+    <div class="slider-track" id="sliderTrack">
+
+      <!-- SLIDE 1: Ausweis -->
+      <div class="slide" id="slide1">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-header-text">
+              <div class="title">Schiedsrichterausweis</div>
+              <div class="subtitle">Vorarlberger Fußballverband</div>
+            </div>
+          </div>
+
+          <!-- FIXER BOGEN (Overlay!) -->
+          <div class="bogen-overlay">
+            <img src="Images/Bogen.png" alt="Bogen" decoding="async" loading="eager">
+          </div>
+
+          <div class="card-scroll">
+            <div class="photo-row">
+              <div class="photo-container">
+                <!-- Profilbild -->
+                <img src="Images/Profilbild-Nathanael.jpg" alt="Profilbild" class="photo-container img">
+              </div>
+              <div class="logo-container">
+                <!-- VFV Logo -->
+                <img src="Images/Logo-VFV.png" alt="VFV" class="vfv-logo">
+              </div>
+            </div>
+            <div class="card-info">
+              <div class="role">Hilfsschiedsrichter</div>
+              <div class="name" id="name"></div>
+              <div class="nr" id="nr"></div>
+              <div class="valid">gültig bis: 31.12.<span class="year"></span></div>
+            </div>
+
+            <div class="qr-section">
+              <img src="Images/QR.PNG" alt="VFV" class="qr-code">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SLIDE 2: Legitimation -->
+      <div class="slide" id="slide2">
+        <div class="legit-card">
+          <div class="legit-header">
+              <!-- VFV Logo -->
+              <img src="Images/Logo-VFV.png" alt="VFV" class="legit-logo">
+            <div class="legit-title-block">
+              <div class="legit-title">Legitimation</div>
+              <div class="legit-name" id="legitName"></div>
+            </div>
+          </div>
+
+          <div class="legit-body">
+            Berechtigung als Hilfsschiedsrichter<br>
+            Dieser Ausweis berechtigt zum freien Eintritt für eine<br>
+            Person für alle Amateurspiele in Vorarlberg.<br>
+            Internationale Freundschaftsspiele und ÖFB-<br>
+            Cupspiele sind von dieser Regelung ausgenommen.<br>
+            Ebenso Spiele der österreichischen Bundesliga (1.<br>
+            und 2. Liga).<br>
+            Der Ausweis ist gültig von 01.01.<span class="year"></span> bis 31.12.<span class="year"></span>.
+          </div>
+
+          <div class="signature-block">
+              <!-- Unterschrift -->
+              <img src="Images/Unterschrift.PNG" alt="VFV" class="signature-img">
+            <div class="sig-name">Alfons Kirchmann</div>
+            <div class="sig-role">Präsident</div>
+          </div>
+
+          <div class="valid-until">gültig bis: 31.12.<span class="year"></span></div>
+        </div>
+      </div>
+
+    </div><!-- /slider-track -->
+  </div><!-- /slider-wrapper -->
+
+  <!-- DOTS -->
+  <div class="dots">
+    <div class="dot active" id="dot0" onclick="goToSlide(0)"></div>
+    <div class="dot" id="dot1" onclick="goToSlide(1)"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <img src="Images/Navigation.PNG" alt="Navigation" class="nav-item">
+  </div>
+
+</div><!-- /app -->
+
+<script>
+  const CONFIG = {
+    name: "Max Mustermann",
+    nr: "34440"
+  };
+
+  let currentSlide = 0;
+  const track = document.getElementById('sliderTrack');
+  const wrapper = document.getElementById('sliderWrapper');
+
+  function goToSlide(index) {
+    currentSlide = index;
+    const pct = index * 50;
+    track.style.transform = `translate3d(-${pct}%, 0, 0)`;
+    document.getElementById('dot0').classList.toggle('active', index === 0);
+    document.getElementById('dot1').classList.toggle('active', index === 1);
+    // Reset scroll on slide1 when switching
+    if (index === 0) document.getElementById('slide1').scrollTop = 0;
+    if (index === 1) document.getElementById('slide2').scrollTop = 0;
+  }
+
+  // Touch swipe
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let isDragging = false;
+
+  wrapper.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    isDragging = false;
+  }, { passive: true });
+
+  wrapper.addEventListener('touchmove', (e) => {
+    const dx = e.touches[0].clientX - touchStartX;
+    const dy = e.touches[0].clientY - touchStartY;
+    if (!isDragging && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+      isDragging = true;
+    }
+    if (isDragging) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  wrapper.addEventListener('touchend', (e) => {
+    if (!isDragging) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (dx < -40 && currentSlide === 0) goToSlide(1);
+    else if (dx > 40 && currentSlide === 1) goToSlide(0);
+    isDragging = false;
+  }, { passive: true });
+
+  const currentYear = new Date().getFullYear();
+
+  document.querySelectorAll('.year').forEach(el => {
+    el.textContent = currentYear;
+  });
+
+  function setConfig(name, nr) {
+    CONFIG.name = name;
+    CONFIG.nr = nr;
+
+    document.getElementById("name").textContent = name;
+    document.getElementById("legitName").textContent = name;
+    document.getElementById("nr").textContent = "Nr. " + nr;
+
+    const vorname = name.split(" ")[0];
+    
+    document.querySelector(".photo-container img").src =
+      `Images/Profilbild-${vorname}.jpg`;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    setConfig(CONFIG.name, CONFIG.nr);
+  });
+
+  setConfig("Nathanael Zech", "34440");
+
+</script>
+</body>
+</html>
